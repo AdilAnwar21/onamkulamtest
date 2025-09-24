@@ -31,100 +31,98 @@ function App() {
     };
   }, []);
 
-  const heroHeight = windowHeight;
+  // Define section heights and start positions
+  const sectionHeight = windowHeight;
+  const totalSections = 5;
+  
+  // Calculate start positions for each section
+  const heroStart = 0;
+  const achievementsStart = sectionHeight;
+  const brandsStart = sectionHeight * 2;
+  const testimonialsStart = sectionHeight * 3;
+  const servicesStart = sectionHeight * 4;
 
-  // Hero offset
-  const heroOffset = Math.min(scrollY * 0.5, heroHeight * 0.5);
+  // Helper function to calculate stacking progress for each section
+  const getStackingProgress = (sectionStart: number, currentScroll: number) => {
+    const progress = Math.max(0, Math.min(1, (currentScroll - sectionStart) / sectionHeight));
+    return progress;
+  };
 
-  // Achievements offset
-  const achievementsStart = heroHeight;
-  const achievementsOffset = Math.max(
-    0,
-    Math.min(heroHeight, scrollY - achievementsStart)
-  );
+  // Calculate progress for each section
+  const heroProgress = getStackingProgress(heroStart, scrollY);
+  const achievementsProgress = getStackingProgress(achievementsStart, scrollY);
+  const brandsProgress = getStackingProgress(brandsStart, scrollY);
+  const testimonialsProgress = getStackingProgress(testimonialsStart, scrollY);
+  const servicesProgress = getStackingProgress(servicesStart, scrollY);
 
-  // Exclusive Brands offset - Extended duration
-  const brandsStart = heroHeight * 2;
-  const brandsScroll = Math.max(0, scrollY - brandsStart);
-  const brandsProgress = brandsScroll / (heroHeight * 2); // Extended for more content
+  // Calculate transforms for stacking effect
+  const getTransform = (progress: number, isActive: boolean) => {
+    if (!isActive) return 'translateY(100vh)';
+    return `translateY(${(1 - progress) * 100}vh)`;
+  };
 
-  // Testimonials calculation - stacks on top of brands
-  const testimonialsStart = heroHeight * 3.5; // Start earlier for stacking
-  const testimonialsScroll = Math.max(0, scrollY - testimonialsStart);
-  const testimonialsOffset = Math.min(heroHeight, testimonialsScroll * 0.8); // Slide up effect
-  const testimonialsProgress = Math.min(
-    1,
-    testimonialsScroll / (heroHeight * 2) // Duration for all slides
-  );
-
-  // Testimonials visibility - stacking scroll
-  const testimonialsVisible = testimonialsScroll > 0;
-
-  // Services calculation - stacks on top of testimonials
-  const servicesStart = heroHeight * 6; // Start when testimonials are well established
-  const servicesScroll = Math.max(0, scrollY - servicesStart);
-  const servicesOffset = Math.min(heroHeight, servicesScroll * 0.8); // Slide up effect
-
-  // Services visibility - stacking scroll
-  const servicesVisible = servicesScroll > 0;
+  // Calculate visibility and z-index
+  const getVisibility = (sectionStart: number, currentScroll: number) => {
+    return currentScroll >= sectionStart - sectionHeight;
+  };
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative">
       {/* Floating Navigation - Always visible with highest z-index */}
       <div className="fixed inset-x-0 top-0 z-[100]">
         <FloatingNavbar />
       </div>
 
-      {/* Scrollable container - Optimized height */}
-      <main style={{ height: `${heroHeight * 8.5}px` }}>
-        {/* Hero Layer */}
-        {scrollY < achievementsStart + heroHeight && (
-          <div
-            className="fixed inset-0 w-full"
-            style={{
-              zIndex: 10,
-              transform: `translateY(${-heroOffset}px)`,
-            }}
-          >
-            <Hero />
-          </div>
-        )}
+      {/* Scrollable container */}
+      <main style={{ height: `${sectionHeight * totalSections}px` }}>
+        
+        {/* Hero Section */}
+        <div
+          className="fixed inset-0 w-full h-screen"
+          style={{
+            zIndex: 10,
+            transform: scrollY >= achievementsStart ? `translateY(-${Math.min(100, (scrollY - achievementsStart) / sectionHeight * 100)}vh)` : 'translateY(0)',
+            transition: 'transform 0.1s ease-out',
+          }}
+        >
+          <Hero />
+        </div>
 
-        {/* Achievements Layer */}
-        {scrollY < brandsStart + heroHeight && (
+        {/* Achievements Section */}
+        {getVisibility(achievementsStart, scrollY) && (
           <div
-            className="absolute inset-0 w-full"
+            className="fixed inset-0 w-full h-screen"
             style={{
-              top: `${heroHeight}px`,
               zIndex: 20,
-              transform: `translateY(${-achievementsOffset}px)`,
+              transform: getTransform(achievementsProgress, scrollY >= achievementsStart),
+              transition: 'transform 0.1s ease-out',
             }}
           >
             <Achievements />
           </div>
         )}
 
-        {/* Exclusive Brands Layer - Extended visibility */}
-        {scrollY < testimonialsStart + heroHeight && (
+        {/* Exclusive Brands Section */}
+        {getVisibility(brandsStart, scrollY) && (
           <div
-            className="absolute inset-0 w-full"
+            className="fixed inset-0 w-full h-screen"
             style={{
-              top: `${heroHeight * 2}px`,
               zIndex: 30,
-              transform: `translateY(${-brandsScroll}px)`,
+              transform: getTransform(brandsProgress, scrollY >= brandsStart),
+              transition: 'transform 0.1s ease-out',
             }}
           >
             <ExclusiveBrands scrollProgress={brandsProgress} />
           </div>
         )}
 
-        {/* Testimonials Layer - Slides up from bottom over brands */}
-        {testimonialsVisible && (
+        {/* Testimonials Section */}
+        {getVisibility(testimonialsStart, scrollY) && (
           <div
-            className="fixed inset-0 w-full"
+            className="fixed inset-0 w-full h-screen"
             style={{
               zIndex: 40,
-              transform: `translateY(${heroHeight - testimonialsOffset}px)`,
+              transform: getTransform(testimonialsProgress, scrollY >= testimonialsStart),
               transition: 'transform 0.1s ease-out',
             }}
           >
@@ -132,19 +130,20 @@ function App() {
           </div>
         )}
 
-        {/* Services Layer - Slides up from bottom */}
-        {servicesVisible && (
+        {/* Services Section */}
+        {getVisibility(servicesStart, scrollY) && (
           <div
-            className="fixed inset-0 w-full"
+            className="fixed inset-0 w-full h-screen"
             style={{
               zIndex: 50,
-              transform: `translateY(${heroHeight - servicesOffset}px)`,
+              transform: getTransform(servicesProgress, scrollY >= servicesStart),
               transition: 'transform 0.1s ease-out',
             }}
           >
-            <ServicesShowcase/>
+            <ServicesShowcase />
           </div>
         )}
+
       </main>
     </div>
   );
