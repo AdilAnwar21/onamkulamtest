@@ -70,6 +70,10 @@ function App() {
   const testimonialsExitProgress = getExitProgress(testimonialsEnd, scrollY);
   const servicesEnterProgress = getEnterProgress(servicesStart, scrollY);
 
+  // Calculate progress values for components that need them
+  const brandsProgress = brandsEnterProgress;
+  const testimonialsProgress = testimonialsEnterProgress;
+
   // Calculate transforms for each section
   const getEnterTransform = (enterProgress: number) => {
     return `translateY(${(1 - enterProgress) * 100}vh)`;
